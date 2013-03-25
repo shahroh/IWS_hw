@@ -12,7 +12,7 @@ public class XPathCrawler {
 	static String BDBStore;
 	static int maxDocSize;
 
-	private static void InitializeCrawl(String firstDestination, String BDBStore, int maxDocSize) throws MalformedURLException{
+	public static void InitializeCrawl(String firstDestination, String BDBStore, int maxDocSize) throws MalformedURLException{
 
 		URL firstDest = new URL(firstDestination);
 

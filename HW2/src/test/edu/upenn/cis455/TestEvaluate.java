@@ -1,5 +1,6 @@
 package test.edu.upenn.cis455;
 import edu.upenn.cis455.xpathengine.*;
+
 import edu.upenn.cis455.xpathengine.XPathEngineImpl;
 import junit.framework.TestCase;
 
@@ -22,7 +23,6 @@ public class TestEvaluate extends TestCase {
 		// Test whether the link has been made
 		assertTrue("Testing if node1 points to node2", node1.nextNodePointer.get(0).nodeName.equals(node2.nodeName));
 		assertTrue("Testing if node3 points to node4", node3.nextNodePointer.get(0).nodeName.equals(node4.nodeName));
-
 	}
 
 	public void testXPathParsingWithNodeCreation(){

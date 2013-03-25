@@ -1,17 +1,18 @@
 package edu.upenn.cis455.crawler;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.PriorityQueue;
 
 public class Frontier {
 
-	private PriorityQueue<URL> frontierQueue;
+	private PriorityQueue<String> frontierQueue;
 	private static Frontier frontier;
 	private static int maxContentLength;
 
 	// Constructor takes no arg and just instantiates a priority queue
 	private Frontier() {
-		frontierQueue = new PriorityQueue<URL>();
+		frontierQueue = new PriorityQueue<String>();
 	}
 
 	// Singleton class, method to get singleton object
@@ -33,17 +34,18 @@ public class Frontier {
 	// Add URL objects to the priority queue frontier
 	public synchronized void addToFrontier(URL newURL){
 		if(!frontierQueue.contains(newURL)){
-			frontierQueue.add(newURL);
+			System.out.println("Adding to frontier: "+newURL.toString());
+			frontierQueue.add(newURL.toString());
 			notify();
 		}
 	}
 
 	// Poll URL object from the Frontier
-	public synchronized URL pollFromFrontier() throws InterruptedException{
+	public synchronized URL pollFromFrontier() throws InterruptedException, MalformedURLException{
 		if(frontierQueue.peek() == null){
 			wait();
 		}
-		return frontierQueue.poll();
+		return new URL(frontierQueue.poll());
 	}
 
 }

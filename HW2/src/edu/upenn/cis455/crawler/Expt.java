@@ -34,6 +34,7 @@ public class Expt {
 		try {
 			System.out.println("entered try");
 			// Create new client socket object, and in/out utils
+//			clientSoc = new Socket(mDestURL.getHost(), mPortNum);
 			clientSoc = new Socket(mDestURL.getHost(), mPortNum);
 			out = new PrintWriter(clientSoc.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(clientSoc.getInputStream()));

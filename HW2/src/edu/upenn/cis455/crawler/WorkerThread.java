@@ -164,15 +164,28 @@ public class WorkerThread implements Runnable{
 	}
 
 	static Pattern hrefPattern = Pattern.compile(".*?href\\s*=\\s*\"(.*?)\"(.*)");
+	static Pattern relHrefPattern = Pattern.compile("(.*\\/).*");
 
-	private void ProcessHref(String pattern) throws Exception{
+	private void ProcessHref(String pattern, URL targetUrl) throws Exception{
 		// Put the newly crawled URL into the frontier queue
+		String fullUrl = "";
+		
 		if(pattern.matches("http://(.*)")){
 			frontier.addToFrontier(new URL(pattern));
 		}
+		else if(pattern.matches("/(.*)")){
+			fullUrl += "http://" + targetUrl.getHost() + ":" + targetUrl.getPort() + pattern;
+			frontier.addToFrontier(new URL(fullUrl));
+		}
+		else if(pattern.matches("[A-Za-z0-9](.*)")){
+			Matcher m = relHrefPattern.matcher(targetUrl.getPath());
+			String path = m.group(1);
+			fullUrl += "http://" + targetUrl.getHost() + ":" + targetUrl.getPort() + path + pattern;
+			frontier.addToFrontier(new URL(fullUrl));
+		}
 	}
 
-	private void ProcessResponseToGet(BufferedReader in) throws Exception{
+	private void ProcessResponseToGet(URL targetUrl, BufferedReader in) throws Exception{
 		String line = "";
 		String pattern = "";
 		int i = 0;
@@ -181,7 +194,7 @@ public class WorkerThread implements Runnable{
 			Matcher m = hrefPattern.matcher(line);
 			while(m.matches()){
 				pattern = m.group(1);
-				ProcessHref(pattern);
+				ProcessHref(pattern, targetUrl);
 				i = m.start(2);
 				line = line.substring(i);
 				m = hrefPattern.matcher(line);
@@ -223,7 +236,7 @@ public class WorkerThread implements Runnable{
 			SendGetRequest(targetUrl, out);
 
 			// Process the response from the server
-			ProcessResponseToGet(in);
+			ProcessResponseToGet(targetUrl, in);
 		}
 		catch(Exception e){
 
@@ -233,10 +246,7 @@ public class WorkerThread implements Runnable{
 	// Called when an item is picked from the queue
 	private void ProcessHtmlUrl(URL targetURL) throws UnknownHostException, IOException{
 		if(IsUrlInteresting(targetURL)){
-
 			ProcessGet(targetURL);
-
-
 		}
 	}
 

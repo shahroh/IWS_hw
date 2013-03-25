@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -163,52 +164,30 @@ public class WorkerThread implements Runnable{
 	}
 
 	static Pattern hrefPattern = Pattern.compile(".*?href\\s*=\\s*\"(.*?)\"(.*)");
-	
-	private void ProcessHref(String pattern){
-		
+
+	private void ProcessHref(String pattern) throws Exception{
+		// Put the newly crawled URL into the frontier queue
+		if(pattern.matches("http://(.*)")){
+			frontier.addToFrontier(new URL(pattern));
+		}
 	}
-	
-	private void ProcessResponseToGet(BufferedReader in) throws IOException{
+
+	private void ProcessResponseToGet(BufferedReader in) throws Exception{
 		String line = "";
 		String pattern = "";
 		int i = 0;
-		
-		Matcher m = hrefPattern.matcher(line);
-		while(m.matches()){
-			pattern = m.group(1);
-			ProcessHref(pattern);
-			i = m.start(2);
-			line = line.substring(i);
-			m = hrefPattern.matcher(line);
-		}
 
-		
 		while((line = in.readLine()) != null){
-			if(line.matches(".*?href\\s*=\\s*\"(.*?)\"(.*)"))
-			System.out.println(line);
-		}
-		
-		
-		/*
-		while((line = in.readLine()) != null){
-			response.append(line);
-			System.out.println(line);
+			Matcher m = hrefPattern.matcher(line);
+			while(m.matches()){
+				pattern = m.group(1);
+				ProcessHref(pattern);
+				i = m.start(2);
+				line = line.substring(i);
+				m = hrefPattern.matcher(line);
+			}
 		}
 
-		Tidy jtidyObj = new Tidy();
-
-		Document jtidydom = jtidyObj.parseDOM(new ByteArrayInputStream(response.toString().getBytes()), null);
-		NodeList a_tag = jtidydom.getElementsByTagName("a");
-		System.out.println("Extracting Links from the Current Page:");
-		String fullHost = "";
-		for(int i=0; i<a_tag.getLength(); i++){			
-			System.out.println("prob");
-			NamedNodeMap att = a_tag.item(i).getAttributes();
-			Node myLink = att.getNamedItem("href");
-			System.out.println(myLink);
-			frontier.addToFrontier(new URL(myLink.getNodeValue()));
-		}
-		 */
 	}
 
 	private boolean IsUrlInteresting(URL targetUrl){
@@ -265,7 +244,7 @@ public class WorkerThread implements Runnable{
 	public void run() {
 
 		URL targetURL;
-		
+
 		try {
 			while(true){
 				System.out.println("Thread started");

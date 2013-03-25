@@ -8,7 +8,7 @@ public class Frontier {
 	private PriorityQueue<URL> frontierQueue;
 	private static Frontier frontier;
 	private static int maxContentLength;
-	
+
 	// Constructor takes no arg and just instantiates a priority queue
 	private Frontier() {
 		frontierQueue = new PriorityQueue<URL>();
@@ -21,7 +21,7 @@ public class Frontier {
 		}
 		return frontier;
 	}
-	
+
 	public void setMaxDocSize(int maxDocSize){
 		maxContentLength = maxDocSize;
 	}
@@ -29,11 +29,13 @@ public class Frontier {
 	public static int GetMaxContentLength(){
 		return maxContentLength;
 	}
-	
+
 	// Add URL objects to the priority queue frontier
 	public synchronized void addToFrontier(URL newURL){
-		frontierQueue.add(newURL);
-		notify();
+		if(!frontierQueue.contains(newURL)){
+			frontierQueue.add(newURL);
+			notify();
+		}
 	}
 
 	// Poll URL object from the Frontier

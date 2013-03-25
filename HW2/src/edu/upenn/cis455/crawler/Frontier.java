@@ -10,17 +10,20 @@ public class Frontier {
 	private static int maxContentLength;
 	
 	// Constructor takes no arg and just instantiates a priority queue
-	private Frontier(int maxDocSize) {
+	private Frontier() {
 		frontierQueue = new PriorityQueue<URL>();
-		maxContentLength = maxDocSize;
 	}
 
 	// Singleton class, method to get singleton object
-	public static Frontier GetSingleton(int maxDocSize){
+	public static Frontier GetSingleton(){
 		if(frontier == null){
-			frontier = new Frontier(maxDocSize);
+			frontier = new Frontier();
 		}
 		return frontier;
+	}
+	
+	public void setMaxDocSize(int maxDocSize){
+		maxContentLength = maxDocSize;
 	}
 
 	public static int GetMaxContentLength(){

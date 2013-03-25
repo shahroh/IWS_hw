@@ -6,24 +6,24 @@ import java.net.URL;
 import edu.upenn.cis455.storage.*;
 
 public class XPathCrawler {
-	
+
 	static int maxNumFiles;
 	static String firstWebPage;
 	static String BDBStore;
 	static int maxDocSize;
-	
+
 	private static void InitializeCrawl(String firstDestination, String BDBStore, int maxDocSize) throws MalformedURLException{
+
 		URL firstDest = new URL(firstDestination);
-		
+
 		// Get singleton frontier object for the crawler
-		Frontier myFrontier = Frontier.GetSingleton(maxDocSize);
-		
+		Frontier myFrontier = Frontier.GetSingleton();
+		myFrontier.setMaxDocSize(maxDocSize);
+		myFrontier.addToFrontier(new URL(firstDestination));
+
 		// Get singleton threadpool object (wherein each worker is initialized and is waiting on the queue)
 		WorkerPool workerPool = WorkerPool.GetSingleton();
-		
-		
-		
-		
+
 	}
 
 	public static void main(String args[])
@@ -31,20 +31,22 @@ public class XPathCrawler {
 		// Read in the command line arguments:
 		if(args.length >= 3){
 			try{
-			// URL of webpage at which to start
-			firstWebPage = new String(args[0]);
+				// URL of webpage at which to start
+				firstWebPage = new String(args[0]);
 
-			// Directory containing BDB Data store
-			BDBStore = new String(args[1]);
+				// Directory containing BDB Data store
+				BDBStore = new String(args[1]);
 
-			// Max size (in MB) of a document to be retrieved from web server
-			maxDocSize = Integer.parseInt(args[2]);
+				// Max size (in MB) of a document to be retrieved from web server
+				maxDocSize = Integer.parseInt(args[2])*1024;
 
-			// Optional 4th argument
-			if(args.length == 4){
-				// Number of files to retireve before stopping
-				maxNumFiles = Integer.parseInt(args[3]);
-			}
+				// Optional 4th argument
+				if(args.length == 4){
+					// Number of files to retireve before stopping
+					maxNumFiles = Integer.parseInt(args[3]);
+				}
+				
+				InitializeCrawl(firstWebPage, BDBStore, maxDocSize);
 			}
 			catch(Exception e){
 				System.out.println("Exception: "+e.getMessage());

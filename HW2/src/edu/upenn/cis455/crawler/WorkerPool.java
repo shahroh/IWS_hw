@@ -6,7 +6,7 @@ public class WorkerPool {
 
 	private static WorkerPool workerPool;
 	private ArrayList<Thread> workers;
-	int mNumThreads;
+	int mNumThreads = 5;
 	WorkerThread runnable;
 	
 	// Constructor instantiates pool of worker threads

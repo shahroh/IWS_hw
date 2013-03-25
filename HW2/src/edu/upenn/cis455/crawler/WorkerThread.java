@@ -8,7 +8,11 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,35 +37,32 @@ public class WorkerThread implements Runnable{
 
 
 	private Socket clientSoc;
-	private int mPortNum = 80;
-	private PrintWriter out;
 	private BufferedReader in;
 	private String headRequest, getRequest, hostHeader, userAgentHeader="User-Agent: cis455crawler";
-	private URL targetURL;
 	private Frontier frontier;
 
 	public WorkerThread() {
 		frontier = Frontier.GetSingleton();
 	}
 
-	private void BadContentType(){
+	private void BadContentType() throws Exception{
+		throw new Exception("bad content type");
+	}
+
+	private void BadContentLength() throws Exception{
 		return; 
 	}
 
-	private void BadContentLength(){
-		return; 
-	}
-
-	private void SendHeadRequest(){
-		headRequest = "HEAD "+ targetURL.getPath()+" HTTP/1.1";
-		hostHeader = "Host: "+ targetURL.getHost();
+	private void SendHeadRequest(PrintWriter out, URL targetUrl){
+		headRequest = "HEAD "+ targetUrl.getPath()+" HTTP/1.1";
+		hostHeader = "Host: "+ targetUrl.getHost();
 		out.println(headRequest);
 		out.println(userAgentHeader);
 		out.println(hostHeader);
-		out.println("");
+		out.println("\r");
 	}
 
-	private void CheckContentType(String line){
+	private void CheckContentType(String line) throws Exception{
 		if(line.matches("Content-Type:.*")){
 			if(!(line.matches("Content-Type:.*text/html.*") || line.matches("Content-Type:.*application/html.*") || line.matches("Content-Type:.*+xml.*"))){
 				// This method should handle the case where the thread does not process this URL
@@ -69,28 +70,73 @@ public class WorkerThread implements Runnable{
 			}
 		}
 	}
-	
-	private void CheckContentLength(String line){
+
+	private void CheckContentLength(String line) throws Exception{
 		if(line.matches("Content-Length:.*")){
 			Pattern attrPattern = Pattern.compile("Content-Length:\\s*(.*)\\s*");
 			Matcher m = attrPattern.matcher(line);
 			int ContentSize;
 			if(m.matches()){
 				//System.out.println("match count " + m.groupCount());
-				System.out.println("COntent size: "+m.group(0).split(":")[1].trim());
-				ContentSize = Integer.parseInt(m.group(0).split(":")[1].trim());
+				System.out.println("COntent size: "+m.group(1).trim());
+				ContentSize = Integer.parseInt(m.group(1).trim());
 				if(ContentSize > Frontier.GetMaxContentLength()){
 					BadContentLength();
 				}
 			}
 		}
 	}
-	
-	private void CheckLastModifiedTime(String line){
+
+	public Date getDate(String myDateMod){
+		SimpleDateFormat fmt1 = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+		SimpleDateFormat fmt2 = new SimpleDateFormat("EEEEEEE, dd-MMM-yy HH:mm:ss z");
+		SimpleDateFormat fmt3 = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
+
+		fmt1.setTimeZone(TimeZone.getTimeZone("GMT"));
+		fmt2.setTimeZone(TimeZone.getTimeZone("GMT"));
+		fmt3.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+		try{
+			return fmt1.parse(myDateMod);
+		}
+		catch(ParseException e){
+		}
+		try{
+			return fmt2.parse(myDateMod);
+		}
+		catch(ParseException e){
+		}
+		try{
+			return fmt3.parse(myDateMod);
+		}
+		catch(Exception e){
+		}
+		return null;
+	}
+
+	private void LastModifedError()throws Exception{
 		return;
 	}
-	
-	private void SendGetRequest(){
+
+	private void CheckLastModifiedTime(String line) throws Exception{
+		if(line.matches("Last-Modified-Since:.*")){
+			Pattern attrPattern = Pattern.compile("Last-Modified-Since:\\s*(.*)\\s*");
+			Matcher m = attrPattern.matcher(line);
+			Date date;
+			if(m.matches()){
+				date = this.getDate(m.group(1));
+				System.out.println("date: " + date);
+				/*
+				TODO :
+				if(date.after(lastTouched)){
+					LastModifiedError();
+				}
+				 */
+			}
+		}
+	}
+
+	private void SendGetRequest(URL targetURL, PrintWriter out){
 		headRequest = "GET "+ targetURL.getPath()+" HTTP/1.1";
 		hostHeader = "Host: "+ targetURL.getHost();
 		out.println(headRequest);
@@ -98,13 +144,13 @@ public class WorkerThread implements Runnable{
 		out.println(userAgentHeader);
 		out.println("");
 	}
-	
-	private void ProcessResponseToHead(BufferedReader in) throws IOException{
+
+	private void ProcessResponseToHead(BufferedReader in) throws Exception{
 		String line = "";
 		while((line = in.readLine()) != null){
 			// Check the content type
 			CheckContentType(line);
-			
+
 			// Check for content length compliance
 			CheckContentLength(line);
 
@@ -115,24 +161,42 @@ public class WorkerThread implements Runnable{
 			System.out.println("headline: "	+ line);
 		}
 	}
+
+	static Pattern hrefPattern = Pattern.compile(".*?href\\s*=\\s*\"(.*?)\"(.*)");
+	
+	private void ProcessHref(String pattern){
+		
+	}
 	
 	private void ProcessResponseToGet(BufferedReader in) throws IOException{
 		String line = "";
-		//StringBuffer response = new StringBuffer();
+		String pattern = "";
+		int i = 0;
 		
-		System.out.println("entering loop");
+		Matcher m = hrefPattern.matcher(line);
+		while(m.matches()){
+			pattern = m.group(1);
+			ProcessHref(pattern);
+			i = m.start(2);
+			line = line.substring(i);
+			m = hrefPattern.matcher(line);
+		}
+
+		
 		while((line = in.readLine()) != null){
+			if(line.matches(".*?href\\s*=\\s*\"(.*?)\"(.*)"))
 			System.out.println(line);
 		}
-		System.out.println("exited loop");
+		
+		
 		/*
 		while((line = in.readLine()) != null){
 			response.append(line);
 			System.out.println(line);
 		}
-		
+
 		Tidy jtidyObj = new Tidy();
-		
+
 		Document jtidydom = jtidyObj.parseDOM(new ByteArrayInputStream(response.toString().getBytes()), null);
 		NodeList a_tag = jtidydom.getElementsByTagName("a");
 		System.out.println("Extracting Links from the Current Page:");
@@ -144,33 +208,64 @@ public class WorkerThread implements Runnable{
 			System.out.println(myLink);
 			frontier.addToFrontier(new URL(myLink.getNodeValue()));
 		}
-		*/
+		 */
 	}
-	
-	private void SocketRequest(URL urlToTarget) throws UnknownHostException, IOException{
-		// Create new client socket object, and in/out utils
-		System.out.println("targetURL: "+targetURL.getHost());
-		clientSoc = new Socket(targetURL.getHost(), mPortNum);
-		out = new PrintWriter(clientSoc.getOutputStream(), true);
-		in = new BufferedReader(new InputStreamReader(clientSoc.getInputStream()));
 
-		// Send the HEAD request to the destination server
-		SendHeadRequest();
+	private boolean IsUrlInteresting(URL targetUrl){
 
-		// Get the response to the HEAD request from the target server, line by line
-		ProcessResponseToHead(in);
-		
-		// Send GET request to the destination server
-		SendGetRequest();
-		
-		// Process the response from the server
-		in = new BufferedReader(new InputStreamReader(clientSoc.getInputStream()));
-		ProcessResponseToGet(in);
+		// returns true if response from HEAD meets our parameters of traversal
+		// (Content type, content length, last modified)
+		try{
+			clientSoc = new Socket(targetUrl.getHost(), targetUrl.getPort());
+			PrintWriter out = new PrintWriter(clientSoc.getOutputStream(), true);
+			in = new BufferedReader(new InputStreamReader(clientSoc.getInputStream()));
+
+			// Send the HEAD request to the destination server
+			SendHeadRequest(out, targetUrl);
+
+			// Get the response to the HEAD request from the target server, line by line
+			ProcessResponseToHead(in);
+
+		}
+		catch(Exception e){
+			return false;
+		}
+		return true;
+	}
+
+	private void ProcessGet(URL targetUrl){
+		// Get raw content of URL, traverse line by line, get the href, and store it in data store
+		try{
+			clientSoc = new Socket(targetUrl.getHost(), targetUrl.getPort());
+			PrintWriter out = new PrintWriter(clientSoc.getOutputStream(), true);
+			in = new BufferedReader(new InputStreamReader(clientSoc.getInputStream()));
+
+			// Send GET request to the destination server
+			SendGetRequest(targetUrl, out);
+
+			// Process the response from the server
+			ProcessResponseToGet(in);
+		}
+		catch(Exception e){
+
+		}
+	}
+
+	// Called when an item is picked from the queue
+	private void ProcessHtmlUrl(URL targetURL) throws UnknownHostException, IOException{
+		if(IsUrlInteresting(targetURL)){
+
+			ProcessGet(targetURL);
+
+
+		}
 	}
 
 	@Override
 	public void run() {
 
+		URL targetURL;
+		
 		try {
 			while(true){
 				System.out.println("Thread started");
@@ -178,7 +273,7 @@ public class WorkerThread implements Runnable{
 				targetURL = frontier.pollFromFrontier();
 
 				// Once we have targetURL, call the method that opens the socket and  crawls the target!
-				SocketRequest(targetURL);
+				ProcessHtmlUrl(targetURL);
 
 			}
 		} catch (Exception e) {

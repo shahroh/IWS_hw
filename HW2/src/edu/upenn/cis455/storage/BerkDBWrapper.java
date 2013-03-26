@@ -16,21 +16,15 @@ public class BerkDBWrapper {
 	static BerkDBWrapper bdb;
 
 	// Initialization
-	public static PrimaryIndex<String, StorageObject> primInd;
+	public static PrimaryIndex<String, UrlStorageObject> UrlInd;
 	private static String myEnvPath = "./";
 	private static String storeName = "exampleStore";
 
 	// Handles
-	public static EntityStore myStore = null;
-	public static Environment myEnv = null;
+	public EntityStore myStore = null;
+	public Environment myEnv = null;
 
-	private static void usage() {
-		System.out.println("TxnGuideDPL [-h <env directory>]");
-		System.exit(-1);
-	}
-	private static void openEnv() throws DatabaseException {
-		System.out.println("opening env and store");
-
+	private void openEnv() throws DatabaseException {
 		// Set up the environment.
 		EnvironmentConfig myEnvConfig = new EnvironmentConfig();
 		myEnvConfig.setAllowCreate(true);
@@ -52,7 +46,7 @@ public class BerkDBWrapper {
 
 	}
 	
-	private static void closeEnv() {
+	private void closeEnv() {
         System.out.println("Closing env and store");
         if (myStore != null ) {
             try {
@@ -77,7 +71,10 @@ public class BerkDBWrapper {
 	private BerkDBWrapper(String envPath, String NameOfStore) {
 		myEnvPath = envPath;
 		storeName = NameOfStore;
-	
+
+		// Primary indices
+		UrlInd = myStore.getPrimaryIndex(String.class, UrlStorageObject.class);
+		
 		openEnv();
 	}
 
@@ -91,14 +88,15 @@ public class BerkDBWrapper {
 
 	// URL to document content
 	public void UrlToDoc(String docUrl, String docContent, Date lastModDate){
-		primInd = myStore.getPrimaryIndex(String.class, StorageObject.class);
 		Transaction trans = myEnv.beginTransaction(null, null);
-		StorageObject obj = new StorageObject();
+		UrlStorageObject obj = new UrlStorageObject();
 		
 		obj.SetDocUrl(docUrl);
 		obj.SetDocContent(docContent);
 		obj.SetLastModifiedDate(lastModDate);
-		
+		 
+		UrlInd.put(trans,obj);
+		trans.commit();
 	}
 
 }

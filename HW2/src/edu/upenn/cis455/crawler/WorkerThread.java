@@ -247,16 +247,10 @@ public class WorkerThread implements Runnable{
 	String myEnvPath = "";
 	String storeName = "";
 	
-	private void StoreToDatabase(URL targetUrl, String content){
+	private void StoreToDatabase(URL targetUrl, String content, Date lastModDate){
 		// Method to store the link and its content to the database
 		BerkDBWrapper bdb = BerkDBWrapper.GetSingleton(myEnvPath, storeName);
-		
-		Transaction trans = BerkDBWrapper.myEnv.beginTransaction(null, null);
-		
-		BerkDBWrapper.primInd = BerkDBWrapper.myStore.getPrimaryIndex(String.class, StorageObject.class);
-		
-		
-		
+		bdb.UrlToDoc(targetUrl, content, lastModDate);
 	}
 	
 	private boolean IsUrlInteresting(URL targetUrl){

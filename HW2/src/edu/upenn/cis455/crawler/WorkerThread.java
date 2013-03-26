@@ -31,18 +31,6 @@ import edu.upenn.cis455.storage.UrlStorageObject;
 
 public class WorkerThread implements Runnable{
 
-	/* 
-	 * 1. Open client side socket (with the URL to visit)
-	 * 2. Send HEAD request to that URL
-	 * 3. Analyze response and depending on criteria decide whether to proceed or not
-	 * 4. Criteria: content type, length, if-modified-since a particular time
-	 * 5. If yes, then send GET request and get the HTML/XML 
-	 * 6. Extract all URL's from the document
-	 * 7. For now, print them!
-	 */
-	// NOT ACCOUNTING FOR: Relative URL, # (fragment), encoding/deciding (which is in accordance with HTTP),
-
-
 	private String headRequest, getRequest, hostHeader, userAgentHeader="User-Agent: cis455crawler";
 	private Frontier frontier;
 	private WorkerPool workerPool;

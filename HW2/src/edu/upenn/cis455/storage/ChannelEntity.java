@@ -27,6 +27,8 @@ public class ChannelEntity {
 	
 	Set<String> matched_xpaths = new HashSet<String>();
 	
+	public ChannelEntity() {}
+	
 	public ChannelEntity(String ID) {
 		channelID = ID;
 	}

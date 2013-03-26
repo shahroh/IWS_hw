@@ -28,6 +28,7 @@ public class XPathEntity {
 	
 	Set<String> matched_urls = new HashSet<String>();
 	
+	public XPathEntity() {}
 	public XPathEntity(String str) {
 		XPath = str;
 	}

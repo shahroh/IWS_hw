@@ -165,6 +165,10 @@ public class XPathEngineImpl implements XPathEngine {
 		XmlUri = xml;
 	}
 
+	public void setXmlString(String xmlContent){
+		XmlUri = xmlContent;
+	}
+
 	public XPathEngineImpl() {
 		// Do NOT add arguments to the constructor!!
 	}
@@ -392,7 +396,9 @@ public class XPathEngineImpl implements XPathEngine {
 
 		try{
 			SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
-			parser.parse(XmlUri, h);
+			System.out.println(XmlUri);
+			InputStream xmlBytes = new ByteArrayInputStream(XmlUri.getBytes());
+			parser.parse(xmlBytes, h);
 		}
 		catch(Exception e){
 			return h.queryMatches;

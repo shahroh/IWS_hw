@@ -51,11 +51,9 @@ public class Frontier {
 
 	public static void SetBDBPath(String path){
 		BDBPath = path;
-		System.out.println("set bdb path in worker pool: "+BDBPath);
 	}
 	
 	public static String GetBDBPath(){
-		System.out.println("get bdb path in worker pool: "+BDBPath);
 		return BDBPath;
 	}
 }

@@ -62,11 +62,8 @@ public class WorkerThread implements Runnable{
 		frontier = Frontier.GetSingleton();
 		myEnvPath = getMyEnvPath(Frontier.GetBDBPath());
 		storeName = getStoreName(Frontier.GetBDBPath());
-		System.out.println("bdbpath: "+Frontier.GetBDBPath());
-		System.out.println("myEnvPath: "+myEnvPath);
-		System.out.println("storeName: "+storeName);
 	}
-
+	
 	private void BadContentType() throws Exception{
 		throw new Exception("bad content type");
 	}
@@ -148,8 +145,8 @@ public class WorkerThread implements Runnable{
 
 	private void CheckLastModifiedTime(String line) throws Exception{
 		// System.out.println("CheckLastModTime");
-		if(line.matches("Last-Modified-Since:.*")){
-			Pattern attrPattern = Pattern.compile("Last-Modified-Since:\\s*(.*)\\s*");
+		if(line.matches("If-Modified-Since:.*")){
+			Pattern attrPattern = Pattern.compile("If-Modified-Since:\\s*(.*)\\s*");
 			Matcher m = attrPattern.matcher(line);
 			Date date;
 			if(m.matches()){
@@ -258,10 +255,9 @@ public class WorkerThread implements Runnable{
 		}
 		
 		// Store the link and its content to the database
-		//StoreToDatabase(targetUrl, content, lastModDate);
+		StoreToDatabase(targetUrl, content, new Date());
 
 	}
-	
 	
 	private void StoreToDatabase(URL targetUrl, String content, Date lastModDate){
 		// Method to store the link and its content to the database

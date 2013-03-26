@@ -42,6 +42,7 @@ public class BerkDBWrapper {
 		myEnv = new Environment(new File(myEnvPath), myEnvConfig);
 
 		// Open the store
+		System.out.println("entityStore!!");
 		myStore = new EntityStore(myEnv, storeName, myStoreConfig);
 
 	}
@@ -72,10 +73,11 @@ public class BerkDBWrapper {
 		myEnvPath = envPath;
 		storeName = NameOfStore;
 
+		openEnv();
+
 		// Primary indices
 		UrlInd = myStore.getPrimaryIndex(String.class, UrlStorageObject.class);
 		
-		openEnv();
 	}
 
 	// Function to instantiate singleton class
@@ -99,7 +101,7 @@ public class BerkDBWrapper {
 		obj.SetDocUrl(docUrl);
 		obj.SetDocContent(docContent);
 		obj.SetLastModifiedDate(lastModDate);
-		 
+		
 		UrlInd.put(trans,obj);
 		trans.commit();
 	}

@@ -17,8 +17,8 @@ public class BerkDBWrapper {
 
 	// Initialization
 	public static PrimaryIndex<String, UrlStorageObject> UrlInd;
-	private static String myEnvPath = "./";
-	private static String storeName = "exampleStore";
+	private String myEnvPath;
+	private String storeName;
 
 	// Handles
 	public EntityStore myStore = null;
@@ -103,5 +103,4 @@ public class BerkDBWrapper {
 		UrlInd.put(trans,obj);
 		trans.commit();
 	}
-
 }

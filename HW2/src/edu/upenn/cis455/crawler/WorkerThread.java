@@ -1,6 +1,7 @@
 package edu.upenn.cis455.crawler;
 
 import java.io.BufferedReader;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,7 +27,7 @@ import org.w3c.tidy.Tidy;
 import com.sleepycat.je.Transaction;
 
 import edu.upenn.cis455.storage.BerkDBWrapper;
-import edu.upenn.cis455.storage.StorageObject;
+import edu.upenn.cis455.storage.UrlStorageObject;
 
 public class WorkerThread implements Runnable{
 
@@ -44,9 +45,26 @@ public class WorkerThread implements Runnable{
 
 	private String headRequest, getRequest, hostHeader, userAgentHeader="User-Agent: cis455crawler";
 	private Frontier frontier;
-
+	private WorkerPool workerPool;
+	
+	private String myEnvPath;
+	private String storeName;
+	
+	private String getMyEnvPath(String BDBPath){
+		return BDBPath.substring(0, BDBPath.lastIndexOf("/")+1);
+	}
+	
+	private String getStoreName(String BDBPath){
+		return BDBPath.substring(BDBPath.lastIndexOf("/")+1, BDBPath.length());
+	}
+	
 	public WorkerThread() {
 		frontier = Frontier.GetSingleton();
+		myEnvPath = getMyEnvPath(Frontier.GetBDBPath());
+		storeName = getStoreName(Frontier.GetBDBPath());
+		System.out.println("bdbpath: "+Frontier.GetBDBPath());
+		System.out.println("myEnvPath: "+myEnvPath);
+		System.out.println("storeName: "+storeName);
 	}
 
 	private void BadContentType() throws Exception{
@@ -240,17 +258,15 @@ public class WorkerThread implements Runnable{
 		}
 		
 		// Store the link and its content to the database
-		StoreToDatabase(targetUrl, content);
+		//StoreToDatabase(targetUrl, content, lastModDate);
 
 	}
 	
-	String myEnvPath = "";
-	String storeName = "";
 	
 	private void StoreToDatabase(URL targetUrl, String content, Date lastModDate){
 		// Method to store the link and its content to the database
 		BerkDBWrapper bdb = BerkDBWrapper.GetSingleton(myEnvPath, storeName);
-		bdb.UrlToDoc(targetUrl, content, lastModDate);
+		bdb.UrlToDoc(targetUrl.toString(), content, lastModDate);
 	}
 	
 	private boolean IsUrlInteresting(URL targetUrl){

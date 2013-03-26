@@ -9,6 +9,7 @@ public class Frontier {
 	private PriorityQueue<String> frontierQueue;
 	private static Frontier frontier;
 	private static int maxContentLength;
+	private static String BDBPath;
 
 	// Constructor takes no arg and just instantiates a priority queue
 	private Frontier() {
@@ -48,4 +49,13 @@ public class Frontier {
 		return new URL(frontierQueue.poll());
 	}
 
+	public static void SetBDBPath(String path){
+		BDBPath = path;
+		System.out.println("set bdb path in worker pool: "+BDBPath);
+	}
+	
+	public static String GetBDBPath(){
+		System.out.println("get bdb path in worker pool: "+BDBPath);
+		return BDBPath;
+	}
 }

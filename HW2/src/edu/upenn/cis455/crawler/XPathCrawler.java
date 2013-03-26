@@ -20,10 +20,10 @@ public class XPathCrawler {
 		Frontier myFrontier = Frontier.GetSingleton();
 		myFrontier.setMaxDocSize(maxDocSize);
 		myFrontier.addToFrontier(new URL(firstDestination));
-
+		Frontier.SetBDBPath(BDBStore);
+		
 		// Get singleton threadpool object (wherein each worker is initialized and is waiting on the queue)
 		WorkerPool workerPool = WorkerPool.GetSingleton();
-
 	}
 
 	public static void main(String args[])

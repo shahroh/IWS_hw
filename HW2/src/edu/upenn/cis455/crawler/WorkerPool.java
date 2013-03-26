@@ -13,7 +13,7 @@ public class WorkerPool {
 	private WorkerPool() {
 		workers = new ArrayList<Thread>();
 		runnable = new WorkerThread();
-		
+
 		for(int i=0; i<mNumThreads; i++){
 			workers.add(i, new Thread(runnable));
 			workers.get(i).start();
@@ -27,5 +27,5 @@ public class WorkerPool {
 		}
 		return workerPool;
 	}
-	
+
 }

@@ -1,6 +1,7 @@
 package edu.upenn.cis455.storage;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Date;
 
 import com.sleepycat.je.DatabaseException;
@@ -46,28 +47,28 @@ public class BerkDBWrapper {
 		myStore = new EntityStore(myEnv, storeName, myStoreConfig);
 
 	}
-	
-	private void closeEnv() {
-        System.out.println("Closing env and store");
-        if (myStore != null ) {
-            try {
-                myStore.close();
-            } catch (DatabaseException e) {
-                System.err.println("closeEnv: myStore: " + 
-                    e.toString());
-                e.printStackTrace();
-            }
-        }
 
-        if (myEnv != null ) {
-            try {
-                myEnv.close();
-            } catch (DatabaseException e) {
-                System.err.println("closeEnv: " + e.toString());
-                e.printStackTrace();
-            }
-        }
-    }
+	private void closeEnv() {
+		System.out.println("Closing env and store");
+		if (myStore != null ) {
+			try {
+				myStore.close();
+			} catch (DatabaseException e) {
+				System.err.println("closeEnv: myStore: " + 
+						e.toString());
+				e.printStackTrace();
+			}
+		}
+
+		if (myEnv != null ) {
+			try {
+				myEnv.close();
+			} catch (DatabaseException e) {
+				System.err.println("closeEnv: " + e.toString());
+				e.printStackTrace();
+			}
+		}
+	}
 
 	private BerkDBWrapper(String envPath, String NameOfStore) {
 		myEnvPath = envPath;
@@ -77,7 +78,7 @@ public class BerkDBWrapper {
 
 		// Primary indices
 		UrlInd = myStore.getPrimaryIndex(String.class, UrlStorageObject.class);
-		
+
 	}
 
 	// Function to instantiate singleton class
@@ -96,13 +97,37 @@ public class BerkDBWrapper {
 	// URL to document content
 	public void UrlToDoc(String docUrl, String docContent, Date lastModDate){
 		Transaction trans = myEnv.beginTransaction(null, null);
-		UrlStorageObject obj = new UrlStorageObject();
-		
-		obj.SetDocUrl(docUrl);
+		UrlStorageObject obj = null;
+		if(!UrlInd.contains(docUrl)){
+			obj = new UrlStorageObject();
+			obj.SetDocUrl(docUrl);
+		}
+		else{
+			obj = UrlInd.get(docUrl);
+		}
 		obj.SetDocContent(docContent);
 		obj.SetLastModifiedDate(lastModDate);
-		
+
 		UrlInd.put(trans,obj);
 		trans.commit();
+	}
+
+	public boolean compareDate(URL targetUrl, Date dateLastMod){
+		Transaction trans = myEnv.beginTransaction(null, null);
+		if(UrlInd.contains(targetUrl.toString())){
+			UrlStorageObject obj = UrlInd.get(targetUrl.toString());
+			Date lastTouched = obj.GetLastModifiedDate();
+
+			// compare with the present date
+			if(dateLastMod.after(lastTouched)){
+				return true;
+			}
+			return false;
+
+		}
+		else{
+			return true;
+		}
+
 	}
 }

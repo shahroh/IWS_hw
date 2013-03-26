@@ -26,6 +26,14 @@ public class XPathCrawler {
 		WorkerPool workerPool = WorkerPool.GetSingleton();
 	}
 
+	private static String getMyEnvPath(String BDBPath){
+		return BDBPath.substring(0, BDBPath.lastIndexOf("/")+1);
+	}
+
+	private static String getStoreName(String BDBPath){
+		return BDBPath.substring(BDBPath.lastIndexOf("/")+1, BDBPath.length());
+	}
+	
 	public static void main(String args[])
 	{
 		// Read in the command line arguments:
@@ -40,6 +48,7 @@ public class XPathCrawler {
 				// Max size (in MB) of a document to be retrieved from web server
 				maxDocSize = Integer.parseInt(args[2])*1024;
 
+				BerkDBWrapper bdb = BerkDBWrapper.GetSingleton(getMyEnvPath(BDBStore), getStoreName(BDBStore));
 				// Optional 4th argument
 				if(args.length == 4){
 					// Number of files to retireve before stopping

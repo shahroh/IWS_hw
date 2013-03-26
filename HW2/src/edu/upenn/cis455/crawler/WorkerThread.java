@@ -46,26 +46,18 @@ public class WorkerThread implements Runnable{
 	private String headRequest, getRequest, hostHeader, userAgentHeader="User-Agent: cis455crawler";
 	private Frontier frontier;
 	private WorkerPool workerPool;
-	
-	private String myEnvPath;
-	private String storeName;
-	
-	private String getMyEnvPath(String BDBPath){
-		return BDBPath.substring(0, BDBPath.lastIndexOf("/")+1);
-	}
-	
-	private String getStoreName(String BDBPath){
-		return BDBPath.substring(BDBPath.lastIndexOf("/")+1, BDBPath.length());
-	}
-	
+
 	public WorkerThread() {
 		frontier = Frontier.GetSingleton();
-		myEnvPath = getMyEnvPath(Frontier.GetBDBPath());
-		storeName = getStoreName(Frontier.GetBDBPath());
+		
 	}
-	
+
 	private void BadContentType() throws Exception{
 		throw new Exception("bad content type");
+	}
+
+	private void LastModifiedError() throws Exception{
+		throw new Exception("last modified error");
 	}
 
 	private void BadContentLength() throws Exception{
@@ -139,25 +131,26 @@ public class WorkerThread implements Runnable{
 		return null;
 	}
 
-	private void LastModifedError() throws Exception{
-		return;
-	}
-
-	private void CheckLastModifiedTime(String line) throws Exception{
+	private void CheckLastModifiedTime(String line, URL targetUrl) throws Exception{
 		// System.out.println("CheckLastModTime");
-		if(line.matches("If-Modified-Since:.*")){
-			Pattern attrPattern = Pattern.compile("If-Modified-Since:\\s*(.*)\\s*");
+		if(line.matches("Last-Modified:.*")){
+			Pattern attrPattern = Pattern.compile("Last-Modified:\\s*(.*)\\s*");
 			Matcher m = attrPattern.matcher(line);
-			Date date;
+			Date dateLastMod;
+
 			if(m.matches()){
-				date = this.getDate(m.group(1));
-				System.out.println("date: " + date);
-				/*
-				TODO :
-				if(date.after(lastTouched)){
+				dateLastMod = this.getDate(m.group(1));
+
+				// Check if the last modified date of the URL object in the data store 
+				// comes BEFORE the date_now variable. If not, process it again. If yes, skip it.
+
+
+				// Compare date_now with date from store
+				BerkDBWrapper bdb = BerkDBWrapper.GetSingleton();
+				if(!bdb.compareDate(targetUrl, dateLastMod)){
 					LastModifiedError();
 				}
-				 */
+
 			}
 		}
 	}
@@ -171,7 +164,7 @@ public class WorkerThread implements Runnable{
 		out.println(userAgentHeader);
 		out.println("");
 	}
-	
+
 	private void CheckForErrorInResponse(String line) throws Exception{
 		// Raise exception if the response is not HTTP 200
 		if(line.startsWith("HTTP")){
@@ -181,13 +174,13 @@ public class WorkerThread implements Runnable{
 		}
 	}
 
-	private void ProcessResponseToHead(BufferedReader in, Socket clientSoc) throws Exception{
+	private void ProcessResponseToHead(BufferedReader in, Socket clientSoc, URL targetUrl) throws Exception{
 		// System.out.println("ProcessResponseToHead");
 		String line = "";
 		while((line = in.readLine()) != null){
 			// Check for 404 Error in first line 
 			CheckForErrorInResponse(line);
-			
+
 			// Check the content type
 			CheckContentType(line);
 
@@ -196,7 +189,7 @@ public class WorkerThread implements Runnable{
 
 			// Check for the last modified date/time 
 			// So that we only crawl it if it has been modified since the last time we crawled it
-			CheckLastModifiedTime(line);
+			CheckLastModifiedTime(line, targetUrl);
 
 			//System.out.println("headline: "	+ line);
 		}
@@ -206,10 +199,10 @@ public class WorkerThread implements Runnable{
 	static Pattern relHrefPattern = Pattern.compile("(.*\\/).*");
 
 	private void ProcessHref(String pattern, URL targetUrl) throws Exception{
-		 //System.out.println("ProcessHref line: "+pattern);
+		//System.out.println("ProcessHref line: "+pattern);
 		// Put the newly crawled URL into the frontier queue
 		String fullUrl = "";
-		
+
 		if(pattern.matches("http://(.*)")){
 			frontier.addToFrontier(new URL(pattern));
 		}
@@ -237,34 +230,34 @@ public class WorkerThread implements Runnable{
 		String pattern = "";
 		int i = 0;
 		String content = "";
-		
+
 		while((line = in.readLine()) != null){
 			content += line;
 			//System.out.println("getLine: "+line);
-			
+
 			Matcher m = hrefPattern.matcher(line);
 			//System.out.println("href: "+pattern);
 			while(m.matches()){
 				pattern = m.group(1);
-				
+
 				ProcessHref(pattern, targetUrl);
 				i = m.start(2);
 				line = line.substring(i);
 				m = hrefPattern.matcher(line);
 			}
 		}
-		
+
 		// Store the link and its content to the database
 		StoreToDatabase(targetUrl, content, new Date());
 
 	}
-	
+
 	private void StoreToDatabase(URL targetUrl, String content, Date lastModDate){
 		// Method to store the link and its content to the database
-		BerkDBWrapper bdb = BerkDBWrapper.GetSingleton(myEnvPath, storeName);
+		BerkDBWrapper bdb = BerkDBWrapper.GetSingleton();
 		bdb.UrlToDoc(targetUrl.toString(), content, lastModDate);
 	}
-	
+
 	private boolean IsUrlInteresting(URL targetUrl){
 		//System.out.println("IsUrlInteresting");
 		// returns true if response from HEAD meets our parameters of traversal
@@ -282,12 +275,13 @@ public class WorkerThread implements Runnable{
 			SendHeadRequest(out, targetUrl, clientSoc);
 
 			// Get the response to the HEAD request from the target server, line by line
-			ProcessResponseToHead(in, clientSoc);
-			
+			ProcessResponseToHead(in, clientSoc, targetUrl);
+
 			clientSoc.close();
 		}
 		catch(Exception e){
-			//System.out.println("Exception in isUrlInteresting");
+			System.out.println("Exception in isUrlInteresting");
+			//e.printStackTrace();
 			return false;
 		}
 		return true;
@@ -307,18 +301,18 @@ public class WorkerThread implements Runnable{
 
 			// Process the response from the server
 			ProcessResponseToGet(targetUrl, in, clientSoc);
-			
+
 			clientSoc.close();
 		}
 		catch(Exception e){
 			//System.out.println("Exception in ProcessGet: "+e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 
 	// Called when an item is picked from the queue
 	private void ProcessHtmlUrl(URL targetURL) throws UnknownHostException, IOException{
-		
+
 		if(IsUrlInteresting(targetURL)){
 			//System.out.println("IsUrlInteresting was passed. Entering ProcessGet");
 			ProcessGet(targetURL);
@@ -344,7 +338,7 @@ public class WorkerThread implements Runnable{
 
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 
 	}

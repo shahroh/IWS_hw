@@ -49,7 +49,7 @@ public class WorkerThread implements Runnable{
 
 	public WorkerThread() {
 		frontier = Frontier.GetSingleton();
-		
+
 	}
 
 	private void BadContentType() throws Exception{
@@ -80,11 +80,29 @@ public class WorkerThread implements Runnable{
 	private void CheckContentType(String line) throws Exception{
 		// System.out.println("CheckContentType");
 		if(line.matches("Content-Type:.*")){
-			if(!(line.matches("Content-Type:.*text/html.*") || line.matches("Content-Type:.*application/html.*") || line.matches("Content-Type:.*+xml.*"))){
+			if((line.matches("Content-Type:.*text/html.*"))){ 
+				SetContentType("text/html");
+			}
+			else if(line.matches("Content-Type:.*text/xml.*")){
+				SetContentType("text/xml");
+			}
+			else if(line.matches("Content-Type:.*application/html.*")){
+				SetContentType("application/xml");
+
+			}
+			else if(line.matches("Content-Type:.*+xml.*")){
+				SetContentType("+xml");
+
+			}
+			else{
 				// This method should handle the case where the thread does not process this URL
 				BadContentType();
 			}
 		}
+	}
+
+	public void SetContentType(String newContentType){
+		contentType = newContentType;
 	}
 
 	private void CheckContentLength(String line) throws Exception{
@@ -212,11 +230,6 @@ public class WorkerThread implements Runnable{
 			frontier.addToFrontier(new URL(fullUrl));
 		}
 		else if(pattern.matches("([A-Za-z0-9].*)")){
-			//System.out.println("regex3: "+targetUrl.getPath());
-			//Matcher m = relHrefPattern.matcher(targetUrl.getPath());
-			//System.out.println("Pattern : "+pattern);
-			//System.out.println("regex 3: "+targetUrl.getPath().substring(0, targetUrl.getPath().lastIndexOf("/")+1));
-			//String path = m.group(1);
 			String path = targetUrl.getPath().substring(0, targetUrl.getPath().lastIndexOf("/")+1);
 			int portNum = (targetUrl.getPort() == -1)?80:targetUrl.getPort();
 			fullUrl += "http://" + targetUrl.getHost() + ":" + portNum + path + pattern;
@@ -235,27 +248,35 @@ public class WorkerThread implements Runnable{
 			content += line;
 			//System.out.println("getLine: "+line);
 
-			Matcher m = hrefPattern.matcher(line);
-			//System.out.println("href: "+pattern);
-			while(m.matches()){
-				pattern = m.group(1);
+			// Only if it is an html file, we extract links
+			if(GetContentType() == "text/html"){
+				Matcher m = hrefPattern.matcher(line);
+				while(m.matches()){
+					pattern = m.group(1);
 
-				ProcessHref(pattern, targetUrl);
-				i = m.start(2);
-				line = line.substring(i);
-				m = hrefPattern.matcher(line);
+					ProcessHref(pattern, targetUrl);
+					i = m.start(2);
+					line = line.substring(i);
+					m = hrefPattern.matcher(line);
+				}
 			}
 		}
 
 		// Store the link and its content to the database
-		StoreToDatabase(targetUrl, content, new Date());
+		StoreToDatabase(targetUrl, content, new Date(), GetContentType());
 
 	}
 
-	private void StoreToDatabase(URL targetUrl, String content, Date lastModDate){
+	private String contentType;
+
+	public String GetContentType(){
+		return contentType;
+	}
+
+	private void StoreToDatabase(URL targetUrl, String content, Date lastModDate, String contentType){
 		// Method to store the link and its content to the database
 		BerkDBWrapper bdb = BerkDBWrapper.GetSingleton();
-		bdb.UrlToDoc(targetUrl.toString(), content, lastModDate);
+		bdb.UrlToDoc(targetUrl.toString(), content, lastModDate, contentType);
 	}
 
 	private boolean IsUrlInteresting(URL targetUrl){

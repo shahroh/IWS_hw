@@ -12,6 +12,7 @@ public class UrlStorageObject {
 	
 	private String docContent;
 	private Date lastModifiedDate;
+	private String contentType;
 	
 	public UrlStorageObject() {}
 
@@ -27,6 +28,10 @@ public class UrlStorageObject {
 		return lastModifiedDate;
 	}
 
+	public String GetContentType(){
+		return contentType;
+	}
+	
 	public void SetDocUrl(String newDocUrl){
 		docUrl = newDocUrl;
 	}
@@ -37,5 +42,9 @@ public class UrlStorageObject {
 	
 	public void SetLastModifiedDate(Date lastModNew){
 		lastModifiedDate = lastModNew;
+	}
+	
+	public void SetContentType(String newContentType){
+		contentType = newContentType;
 	}
 }

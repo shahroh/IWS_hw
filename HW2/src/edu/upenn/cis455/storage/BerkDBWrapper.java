@@ -86,6 +86,11 @@ public class BerkDBWrapper {
 		return bdb;
 	}
 
+	// Function to instantiate singleton class without args
+	public static BerkDBWrapper GetSingleton(){
+		return bdb;
+	}
+
 	// URL to document content
 	public void UrlToDoc(String docUrl, String docContent, Date lastModDate){
 		Transaction trans = myEnv.beginTransaction(null, null);

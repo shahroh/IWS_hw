@@ -23,6 +23,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.tidy.Tidy;
 
+import com.sleepycat.je.Transaction;
+
+import edu.upenn.cis455.storage.BerkDBWrapper;
+import edu.upenn.cis455.storage.StorageObject;
+
 public class WorkerThread implements Runnable{
 
 	/* 
@@ -216,9 +221,10 @@ public class WorkerThread implements Runnable{
 		String line = "";
 		String pattern = "";
 		int i = 0;
-
+		String content = "";
+		
 		while((line = in.readLine()) != null){
-			
+			content += line;
 			//System.out.println("getLine: "+line);
 			
 			Matcher m = hrefPattern.matcher(line);
@@ -232,9 +238,27 @@ public class WorkerThread implements Runnable{
 				m = hrefPattern.matcher(line);
 			}
 		}
+		
+		// Store the link and its content to the database
+		StoreToDatabase(targetUrl, content);
 
 	}
-
+	
+	String myEnvPath = "";
+	String storeName = "";
+	
+	private void StoreToDatabase(URL targetUrl, String content){
+		// Method to store the link and its content to the database
+		BerkDBWrapper bdb = BerkDBWrapper.GetSingleton(myEnvPath, storeName);
+		
+		Transaction trans = BerkDBWrapper.myEnv.beginTransaction(null, null);
+		
+		BerkDBWrapper.primInd = BerkDBWrapper.myStore.getPrimaryIndex(String.class, StorageObject.class);
+		
+		
+		
+	}
+	
 	private boolean IsUrlInteresting(URL targetUrl){
 		//System.out.println("IsUrlInteresting");
 		// returns true if response from HEAD meets our parameters of traversal
